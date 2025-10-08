@@ -32,5 +32,7 @@ func main() {
     server.Handler = mux
     server.Addr = fmt.Sprintf("localhost:%v",apiCfg.port)
     fmt.Printf("Server running on port %v\n",apiCfg.port)
+
+    mux.HandleFunc("POST /api/users",apiCfg.createUserHandler)
     server.ListenAndServe()
 }
