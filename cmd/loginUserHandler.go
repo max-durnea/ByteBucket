@@ -40,6 +40,15 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request){
 		respondWithError(w,401,fmt.Sprintf("%v",err))
 		return
 	}
+	refreshToken := auth.MakeRefreshToken();
+	refreshTokenParams := CreateRefreshTokenParams{
+		Token: refreshToken,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID: userDb.ID,
+		ExpiresAt: 24 * time.Hour,
+	}
+	_,err := cfg.db.CreateRefreshToken(r.Context(),refreshTokenParams)
 	response:= struct{
 		ID uuid.UUID `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
@@ -47,6 +56,7 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request){
 		Email string `json:"email"`
 		Username string `json:"username"`
 		JWTtoken string `json:"jwt_token"`
+		RefreshToken string `json:"refresh_token"`
 	}{
 		ID: userDb.ID,
 		CreatedAt: userDb.CreatedAt,
@@ -54,6 +64,7 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request){
 		Email: userDb.Email,
 		Username: userDb.Username,
 		JWTtoken: jwtToken,
+		RefreshToken: refreshToken,
 	}
 	respondWithJson(w,200,response)
 	w.Header().Set("Content-Type", "application/json")
