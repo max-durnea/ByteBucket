@@ -13,19 +13,24 @@ import (
 var apiCfg = apiConfig{}
 
 func main() {
-    fmt.Println("Hello, ByteBucket!")
+    
     godotenv.Load()
     dbURL := os.Getenv("DATABASE_URL")
+
     db, err := sql.Open("postgres",dbURL)
     if err != nil {
         fmt.Printf("ERROR: Could not open database: %v",err)
         os.Exit(1)
     }
+    defer db.Close()
     dbQueries := database.New(db)
     apiCfg.db = dbQueries
-
+    apiCfg.port = os.Getenv("PORT")
     mux := http.NewServeMux()
     server := &http.Server{}
+
     server.Handler = mux
-    
+    server.Addr = fmt.Sprintf("localhost:%v",apiCfg.port)
+    fmt.Printf("Server running on port %v\n",apiCfg.port)
+    server.ListenAndServe()
 }

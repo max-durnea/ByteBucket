@@ -5,10 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 )
-type apiConfig struct{
-	db *database.Queries
-	port string
-}
 
 func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request){
 	type params struct{
@@ -20,6 +16,7 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request){
 	data := params{}
 	err := decoder.Decode(&data)
 	if err != nil{
-		respondWithJson
+		respondWithError(w,400,fmt.Sprintf("%v",err))
+		return
 	}
 }
