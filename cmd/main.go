@@ -36,6 +36,7 @@ func main() {
     dbQueries := database.New(db)
     apiCfg.db = dbQueries
     apiCfg.port = os.Getenv("PORT")
+    apiCfg.tokenSecret = os.Getenv("TOKEN_SECRET")
     mux := http.NewServeMux()
     server := &http.Server{}
 

@@ -5,4 +5,5 @@ import (
 type apiConfig struct{
 	db *database.Queries
 	port string
+	tokenSecret string
 }
