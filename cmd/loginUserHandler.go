@@ -3,7 +3,7 @@ package main
 import(
 	"net/http"
 	"encoding/json"
-	_"github.com/max-durnea/ByteBucket/internal/database"
+	"github.com/max-durnea/ByteBucket/internal/database"
 	"github.com/max-durnea/ByteBucket/internal/auth"
 	"github.com/google/uuid"
 	"fmt"
@@ -40,15 +40,19 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request){
 		respondWithError(w,401,fmt.Sprintf("%v",err))
 		return
 	}
-	refreshToken := auth.MakeRefreshToken();
-	refreshTokenParams := CreateRefreshTokenParams{
+	refreshToken:= auth.MakeRefreshToken();
+	refreshTokenParams := database.CreateRefreshTokenParams{
 		Token: refreshToken,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		UserID: userDb.ID,
-		ExpiresAt: 24 * time.Hour,
+		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
 	}
-	_,err := cfg.db.CreateRefreshToken(r.Context(),refreshTokenParams)
+	_,err = cfg.db.CreateRefreshToken(r.Context(),refreshTokenParams)
+	if err != nil {
+		respondWithError(w,401,fmt.Sprintf("%v",err))
+		return
+	}
 	response:= struct{
 		ID uuid.UUID `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
@@ -67,7 +71,5 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request){
 		RefreshToken: refreshToken,
 	}
 	respondWithJson(w,200,response)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
 
 }
