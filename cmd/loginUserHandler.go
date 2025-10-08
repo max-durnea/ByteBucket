@@ -5,7 +5,9 @@ import(
 	"encoding/json"
 	_"github.com/max-durnea/ByteBucket/internal/database"
 	"github.com/max-durnea/ByteBucket/internal/auth"
+	"github.com/google/uuid"
 	"fmt"
+	"time"
 )
 
 
@@ -33,6 +35,27 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	//For now simply respond with OK
+	jwtToken,err := auth.MakeJWT(userDb.ID,cfg.tokenSecret,15*time.Minute)
+	if err != nil {
+		respondWithError(w,401,fmt.Sprintf("%v",err))
+		return
+	}
+	response:= struct{
+		ID uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email string `json:"email"`
+		Username string `json:"username"`
+		JWTtoken string `json:"jwt_token"`
+	}{
+		ID: userDb.ID,
+		CreatedAt: userDb.CreatedAt,
+		UpdatedAt: userDb.UpdatedAt,
+		Email: userDb.Email,
+		Username: userDb.Username,
+		JWTtoken: jwtToken,
+	}
+	respondWithJson(w,200,response)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
