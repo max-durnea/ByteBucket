@@ -4,7 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 )
-func MakeRefreshToken() string{
+
+func MakeRefreshToken() string {
 	key := make([]byte, 32)
 	rand.Read(key)
 

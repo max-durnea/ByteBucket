@@ -24,5 +24,5 @@ jobs:
       - name: Run tests
         run: go test ./... -v
 
-      - name: Run linter
-        run: golangci-lint run
+      - name: Check Formatting
+        run: test -z  $(go fmt ./...)

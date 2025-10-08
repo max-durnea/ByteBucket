@@ -1,75 +1,73 @@
 package main
 
-import(
-	"net/http"
+import (
 	"encoding/json"
-	"github.com/max-durnea/ByteBucket/internal/database"
-	"github.com/max-durnea/ByteBucket/internal/auth"
-	"github.com/google/uuid"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/max-durnea/ByteBucket/internal/auth"
+	"github.com/max-durnea/ByteBucket/internal/database"
+	"net/http"
 	"time"
 )
 
-
-
-func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request){
-	type params struct{
-		Email string `json:"email"`
+func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request) {
+	type params struct {
+		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 	data := params{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&data)
 	if err != nil {
-		respondWithError(w,400,fmt.Sprintf("%v",err))
+		respondWithError(w, 400, fmt.Sprintf("%v", err))
 		return
 	}
-	userDb, err := cfg.db.GetUserByEmail(r.Context(),data.Email)
+	userDb, err := cfg.db.GetUserByEmail(r.Context(), data.Email)
 	if err != nil {
-		respondWithError(w,400,fmt.Sprintf("%v",err))
+		respondWithError(w, 400, fmt.Sprintf("%v", err))
 		return
 	}
-	err = auth.CheckPasswordHash(data.Password,userDb.PasswordHash)
+	err = auth.CheckPasswordHash(data.Password, userDb.PasswordHash)
 	if err != nil {
-		respondWithError(w,401,fmt.Sprintf("%v",err))
+		respondWithError(w, 401, fmt.Sprintf("%v", err))
 		return
 	}
 	//For now simply respond with OK
-	jwtToken,err := auth.MakeJWT(userDb.ID,cfg.tokenSecret,15*time.Minute)
+	jwtToken, err := auth.MakeJWT(userDb.ID, cfg.tokenSecret, 15*time.Minute)
 	if err != nil {
-		respondWithError(w,401,fmt.Sprintf("%v",err))
+		respondWithError(w, 401, fmt.Sprintf("%v", err))
 		return
 	}
-	refreshToken:= auth.MakeRefreshToken();
+	refreshToken := auth.MakeRefreshToken()
 	refreshTokenParams := database.CreateRefreshTokenParams{
-		Token: refreshToken,
+		Token:     refreshToken,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID: userDb.ID,
+		UserID:    userDb.ID,
 		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
 	}
-	_,err = cfg.db.CreateRefreshToken(r.Context(),refreshTokenParams)
+	_, err = cfg.db.CreateRefreshToken(r.Context(), refreshTokenParams)
 	if err != nil {
-		respondWithError(w,401,fmt.Sprintf("%v",err))
+		respondWithError(w, 401, fmt.Sprintf("%v", err))
 		return
 	}
-	response:= struct{
-		ID uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email string `json:"email"`
-		Username string `json:"username"`
-		JWTtoken string `json:"jwt_token"`
-		RefreshToken string `json:"refresh_token"`
+	response := struct {
+		ID           uuid.UUID `json:"id"`
+		CreatedAt    time.Time `json:"created_at"`
+		UpdatedAt    time.Time `json:"updated_at"`
+		Email        string    `json:"email"`
+		Username     string    `json:"username"`
+		JWTtoken     string    `json:"jwt_token"`
+		RefreshToken string    `json:"refresh_token"`
 	}{
-		ID: userDb.ID,
-		CreatedAt: userDb.CreatedAt,
-		UpdatedAt: userDb.UpdatedAt,
-		Email: userDb.Email,
-		Username: userDb.Username,
-		JWTtoken: jwtToken,
+		ID:           userDb.ID,
+		CreatedAt:    userDb.CreatedAt,
+		UpdatedAt:    userDb.UpdatedAt,
+		Email:        userDb.Email,
+		Username:     userDb.Username,
+		JWTtoken:     jwtToken,
 		RefreshToken: refreshToken,
 	}
-	respondWithJson(w,200,response)
+	respondWithJson(w, 200, response)
 
 }
