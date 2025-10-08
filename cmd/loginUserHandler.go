@@ -35,6 +35,5 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, r *http.Request){
 	//For now simply respond with OK
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	w.Write([]byte("GOOD"))
 
 }
