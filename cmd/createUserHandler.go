@@ -35,10 +35,17 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request){
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	user,err:=cfg.db.CreateUser(r.Context(),createUserParams)
+	userDb,err:=cfg.db.CreateUser(r.Context(),createUserParams)
 	if err != nil {
 		respondWithError(w,400,fmt.Sprintf("%v",err))
 		return
+	}
+	user := User{
+		Username: userDb.Username,
+		ID: userDb.ID,
+		Email: userDb.Email,
+		CreatedAt: userDb.CreatedAt,
+		UpdatedAt: userDb.UpdatedAt,
 	}
 	respondWithJson(w,201,user)
 

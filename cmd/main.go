@@ -8,9 +8,19 @@ import (
     "net/http"
     "github.com/joho/godotenv"
     "os"
+    "time"
+    "github.com/google/uuid"
 )
 
 var apiCfg = apiConfig{}
+
+type User struct {
+	ID           uuid.UUID `json:"id"`
+	Username     string `json:"username"`
+	Email        string `json:"email"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
 
 func main() {
     
@@ -34,5 +44,6 @@ func main() {
     fmt.Printf("Server running on port %v\n",apiCfg.port)
 
     mux.HandleFunc("POST /api/users",apiCfg.createUserHandler)
+    mux.HandleFunc("POST /api/login",apiCfg.loginUserHandler)
     server.ListenAndServe()
 }
