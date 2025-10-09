@@ -17,4 +17,7 @@ SELECT * FROM refresh_tokens WHERE token = $1;
 DELETE FROM refresh_tokens
 WHERE expires_at < NOW() OR revoked_at IS NOT NULL;
 
+-- name: ResetRefreshTokens :exec
+DELETE FROM refresh_tokens;
+
 

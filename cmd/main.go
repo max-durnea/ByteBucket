@@ -37,6 +37,7 @@ func main() {
 	apiCfg.db = dbQueries
 	apiCfg.port = os.Getenv("PORT")
 	apiCfg.tokenSecret = os.Getenv("TOKEN_SECRET")
+	apiCfg.platform = os.Getenv("PLATFORM")
 	mux := http.NewServeMux()
 	server := &http.Server{}
 
@@ -48,6 +49,7 @@ func main() {
 	mux.HandleFunc("POST /api/login", apiCfg.loginUserHandler)
 	mux.Handle("POST /api/file", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.uploadFileHandler)))
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshTokenHandler)
+	mux.HandleFunc("POST /admin/reset", apiCfg.resetHandler)
 	apiCfg.StartRefreshTokenCleanup(15 * time.Minute)
 	server.ListenAndServe()
 }

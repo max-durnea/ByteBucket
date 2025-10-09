@@ -99,3 +99,12 @@ func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (Us
 	)
 	return i, err
 }
+
+const resetRefreshTokens = `-- name: ResetRefreshTokens :exec
+DELETE FROM refresh_tokens
+`
+
+func (q *Queries) ResetRefreshTokens(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, resetRefreshTokens)
+	return err
+}
