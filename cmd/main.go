@@ -46,5 +46,6 @@ func main() {
 
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 	mux.HandleFunc("POST /api/login", apiCfg.loginUserHandler)
+	mux.Handle("POST /api/file",apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.uploadFileHandler)))
 	server.ListenAndServe()
 }
