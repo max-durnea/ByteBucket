@@ -1,25 +1,26 @@
 package main
-import(
-	"net/http"
-	"github.com/max-durnea/ByteBucket/internal/auth"
+
+import (
 	"context"
+	"github.com/max-durnea/ByteBucket/internal/auth"
+	"net/http"
 )
 
-func (cfg *apiConfig) JwtMiddleware(next http.Handler) http.Handler{
-	return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request){
+func (cfg *apiConfig) JwtMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//extract token from the header
-		token,err := auth.GetBearerToken(r.Header)
+		token, err := auth.GetBearerToken(r.Header)
 		if err != nil {
-			respondWithError(w,404,"Access Denied")
+			respondWithError(w, 404, "Access Denied")
 			return
 		}
-		userID, err := auth.ValidateJWT(token,cfg.tokenSecret)
+		userID, err := auth.ValidateJWT(token, cfg.tokenSecret)
 		if err != nil {
-			respondWithError(w,404,"Access Denied")
+			respondWithError(w, 404, "Access Denied")
 			return
 		}
 		//store the id in the context
 		ctx := context.WithValue(r.Context(), "user_id", userID)
-		next.ServeHTTP(w,r.WithContext(ctx))
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
