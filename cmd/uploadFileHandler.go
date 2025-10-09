@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"time"
-	"log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/google/uuid"
 	"github.com/max-durnea/ByteBucket/internal/auth"
 	"github.com/max-durnea/ByteBucket/internal/database"
-	"github.com/google/uuid"
+	"log"
+	"net/http"
+	"time"
 )
 
 // user_id can be taken from the context
@@ -55,16 +55,16 @@ func (cfg *apiConfig) uploadFileHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	createFileParams := database.CreateFileParams{
-		ID: uuid.New(),
-		UserID: parsed_user_id,
+		ID:        uuid.New(),
+		UserID:    parsed_user_id,
 		ObjectKey: key,
-		FileName: data.FileName,
-		MimeType: data.MimeType,
+		FileName:  data.FileName,
+		MimeType:  data.MimeType,
 		CreatedAt: time.Now(),
 	}
-	_, err = cfg.db.CreateFile(r.Context(),createFileParams)
+	_, err = cfg.db.CreateFile(r.Context(), createFileParams)
 	if err != nil {
-		respondWithError(w,http.StatusInternalServerError,"Failed to upload file")
+		respondWithError(w, http.StatusInternalServerError, "Failed to upload file")
 		return
 	}
 	// Return the URL and key to the client
