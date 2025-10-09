@@ -9,3 +9,6 @@ SELECT users.*
 FROM refresh_tokens JOIN users ON refresh_tokens.user_id = users.id
 WHERE refresh_tokens.token = $1;
 
+-- name: GetRefreshToken :one
+SELECT * FROM refresh_tokens WHERE token = $1;
+
