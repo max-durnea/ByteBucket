@@ -11,6 +11,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type File struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	ObjectKey string
+	FileName  string
+	MimeType  string
+	CreatedAt time.Time
+}
+
 type RefreshToken struct {
 	Token     string
 	CreatedAt time.Time

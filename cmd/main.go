@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"os"
 	"time"
+    "github.com/aws/aws-sdk-go-v2/config"
+    "github.com/aws/aws-sdk-go-v2/service/s3"
+	"context"
 )
 
 var apiCfg = apiConfig{}
@@ -38,6 +41,21 @@ func main() {
 	apiCfg.port = os.Getenv("PORT")
 	apiCfg.tokenSecret = os.Getenv("TOKEN_SECRET")
 	apiCfg.platform = os.Getenv("PLATFORM")
+	apiCfg.s3Bucket = os.Getenv("S3_BUCKET")
+	apiCfg.s3Region = os.Getenv("AWS_REGION")
+
+	cfgAWS, err := config.LoadDefaultConfig(context.TODO(),
+        config.WithRegion(apiCfg.s3Region),
+    )
+
+	if err != nil {
+        fmt.Println("Error loading AWS config:", err)
+        os.Exit(1)
+    }
+
+    s3Client := s3.NewFromConfig(cfgAWS)
+    apiCfg.s3Client = s3Client
+
 	mux := http.NewServeMux()
 	server := &http.Server{}
 
@@ -47,7 +65,7 @@ func main() {
 
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 	mux.HandleFunc("POST /api/login", apiCfg.loginUserHandler)
-	mux.Handle("POST /api/file", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.uploadFileHandler)))
+	mux.Handle("POST /api/files", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.uploadFileHandler)))
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshTokenHandler)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetHandler)
 	apiCfg.StartRefreshTokenCleanup(15 * time.Minute)

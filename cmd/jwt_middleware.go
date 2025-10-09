@@ -16,11 +16,12 @@ func (cfg *apiConfig) JwtMiddleware(next http.Handler) http.Handler {
 		}
 		userID, err := auth.ValidateJWT(token, cfg.tokenSecret)
 		if err != nil {
-			respondWithError(w, 404, "Access Denied")
+			respondWithError(w, http.StatusUnauthorized, "Access Denied")
 			return
 		}
 		//store the id in the context
-		ctx := context.WithValue(r.Context(), "user_id", userID)
+		// store the UUID string so handlers that expect a string (and parse it) work correctly
+		ctx := context.WithValue(r.Context(), auth.UserIDKey, userID.String())
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

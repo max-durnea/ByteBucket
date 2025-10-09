@@ -1,9 +1,12 @@
-1. Implement user authentification and storing in Postgresql database
+= 1. Implement user authentification and storing in Postgresql database
     - Create the table (id, username, email, password_hash, created_at, updated_at)
     - Fix migration bash scripts
-2. Implement authorization using middleware for access token check
+= 2. Implement authorization using middleware for access token check
 3. Add database refresh token cleanup
 4. Add database cleanup endpoint for dev
     - use an environmental variable to check the platform
 5. Add file uploading and downloading ability
 6. Add other features
+7. Create and return a jwt token when user registers
+
+8. Make the request in posstman to see if uploading works
