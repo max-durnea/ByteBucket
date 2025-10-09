@@ -21,8 +21,22 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
 
-      - name: Run tests
-        run: go test ./... -v
+      - name: Check formatting
+        run: |
+          fmt_out=$(gofmt -l .)
+          if [ -n "$fmt_out" ]; then
+            echo "gofmt needs to run on these files:"; echo "$fmt_out"; exit 1
+          fi
 
-      - name: Check Formatting
-        run: test -z  $(go fmt ./...)
+      - name: Run vet
+        run: go vet ./...
+
+      - name: Run tests (race + coverage)
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.out
