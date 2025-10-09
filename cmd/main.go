@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -10,9 +13,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-    "github.com/aws/aws-sdk-go-v2/config"
-    "github.com/aws/aws-sdk-go-v2/service/s3"
-	"context"
 )
 
 var apiCfg = apiConfig{}
@@ -45,16 +45,16 @@ func main() {
 	apiCfg.s3Region = os.Getenv("AWS_REGION")
 
 	cfgAWS, err := config.LoadDefaultConfig(context.TODO(),
-        config.WithRegion(apiCfg.s3Region),
-    )
+		config.WithRegion(apiCfg.s3Region),
+	)
 
 	if err != nil {
-        fmt.Println("Error loading AWS config:", err)
-        os.Exit(1)
-    }
+		fmt.Println("Error loading AWS config:", err)
+		os.Exit(1)
+	}
 
-    s3Client := s3.NewFromConfig(cfgAWS)
-    apiCfg.s3Client = s3Client
+	s3Client := s3.NewFromConfig(cfgAWS)
+	apiCfg.s3Client = s3Client
 
 	mux := http.NewServeMux()
 	server := &http.Server{}
