@@ -12,3 +12,9 @@ WHERE refresh_tokens.token = $1;
 -- name: GetRefreshToken :one
 SELECT * FROM refresh_tokens WHERE token = $1;
 
+-- name: DeleteExpiredOrRevokedTokens :exec
+
+DELETE FROM refresh_tokens
+WHERE expires_at < NOW() OR revoked_at IS NOT NULL;
+
+

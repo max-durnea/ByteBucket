@@ -48,5 +48,6 @@ func main() {
 	mux.HandleFunc("POST /api/login", apiCfg.loginUserHandler)
 	mux.Handle("POST /api/file", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.uploadFileHandler)))
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshTokenHandler)
+	apiCfg.StartRefreshTokenCleanup(15 * time.Minute)
 	server.ListenAndServe()
 }
