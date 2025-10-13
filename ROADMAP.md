@@ -9,4 +9,4 @@
 6. Add other features
 7. Create and return a jwt token when user registers
 
-8. Make the request in posstman to see if uploading works
+= 8. Make the request in posstman to see if uploading works
