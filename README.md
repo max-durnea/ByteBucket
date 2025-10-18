@@ -74,7 +74,7 @@ go test ./... -v
 - Error responses sometimes include internal error strings — these must be sanitized before a public release.
 - More unit and integration tests are desirable, including handler tests and an integration test against a test DB.
 
-## Security notes / Suggestions
+## Security notes 
 
 - Do not return raw error messages in responses — use machine-readable error codes and safe human messages.
 - Use short lifetimes for access tokens and rotate refresh tokens on use.
