@@ -89,9 +89,6 @@ go test ./... -v
 - Add a small React/vanilla JS demo that demonstrates signup -> login -> presigned upload -> display uploaded file list.
 - Add integration tests that run migrations on a test Postgres container and run key end-to-end flows.
 
-## Contact / Attribution
-
-This project was created by the author as a student portfolio project. If you want help improving any of the TODO items above, I can implement them and add tests/CI changes.
 
 ## API usage
 
@@ -141,4 +138,8 @@ Optional / useful env vars:
 - PLATFORM — optional platform identifier (project-specific)
 
 Security note: Do not commit `.env` containing secrets to source control. Use secret management for production.
+
+## Contact / Attribution
+
+This project was created by the author as a student portfolio project. If you want help improving any of the TODO items above, I can implement them and add tests/CI changes.
 # ByteBucket
