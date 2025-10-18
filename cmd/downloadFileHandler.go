@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"net/http"
-	"strings"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"time"
+	"github.com/google/uuid"
 	"github.com/max-durnea/ByteBucket/internal/auth"
+	"net/http"
+	"strings"
+	"time"
 )
 
 func (cfg *apiConfig) downloadFileHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,10 +51,9 @@ func (cfg *apiConfig) downloadFileHandler(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		
 		// Generate a pre-signed URL for downloading
 		presigner := s3.NewPresignClient(cfg.s3Client)
-		
+
 		input := &s3.GetObjectInput{
 			Bucket: aws.String(cfg.s3Bucket),
 			Key:    aws.String(fileDb.ObjectKey),
@@ -64,7 +63,7 @@ func (cfg *apiConfig) downloadFileHandler(w http.ResponseWriter, r *http.Request
 			http.Error(w, fmt.Sprintf("Failed to create signed URL: %v", err), http.StatusInternalServerError)
 			return
 		}
-		
+
 		signedURL := presignedURL.URL
 		// Respond with the signed URL
 		respondWithJson(w, http.StatusOK, map[string]string{"url": signedURL})

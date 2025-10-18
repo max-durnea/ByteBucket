@@ -92,4 +92,53 @@ go test ./... -v
 ## Contact / Attribution
 
 This project was created by the author as a student portfolio project. If you want help improving any of the TODO items above, I can implement them and add tests/CI changes.
+
+## API usage
+
+Below are the endpoints implemented in this project and how to call them. All protected endpoints require the `Authorization: Bearer <JWT>` header returned by the login endpoint.
+
+1) Register a user
+  - POST /api/users
+  - Body (JSON): { "username": "alice", "email": "alice@example.com", "password": "secret" }
+  - Response: 201 Created with user object
+
+2) Login
+  - POST /api/login
+  - Body (JSON): { "email": "alice@example.com", "password": "secret" }
+  - Response: 200 OK with JSON containing `jwt_token` and `refresh_token`.
+
+3) Request presigned upload URL
+  - POST /api/files (protected)
+  - Body (JSON): { "file_name": "photo.jpg", "mime_type": "image/jpeg" }
+  - Response: 200 OK with JSON containing `upload_url` (presigned PUT URL), `key` and `mime_type`.
+
+4) List files for the authenticated user
+  - GET /api/files (protected)
+  - Response: 200 OK with array of files: [{ "id": "<uuid>", "file_name": "...", "mime_type": "...", "key": "...", "created_at": "..." }, ...]
+
+5) Get a presigned download URL for a file
+  - GET /api/files/{id} (protected)
+  - Response: 200 OK with JSON { "url": "<presigned-get-url>" } (only the file owner can get the URL)
+
+6) Refresh token
+  - POST /api/refresh
+  - Body: (implementation-specific) — returns a new JWT when provided a valid refresh token (see handlers)
+
+
+## .env variables
+
+Create a `.env` in the project root (or export env vars) with at least the following values for local development:
+
+- DATABASE_URL — Postgres connection string, e.g. `postgres://user:pass@localhost:5432/dbname?sslmode=disable`
+- TOKEN_SECRET — secret used to sign JWTs
+- AWS_REGION — AWS region for S3 (e.g. `us-east-1`)
+- S3_BUCKET — S3 bucket name used for presigned URLs
+- AWS_ACCESS_KEY_ID — AWS access key id
+- AWS_SECRET_ACCESS_KEY — AWS secret access key
+- PORT — optional, defaults to 8080 if not set
+
+Optional / useful env vars:
+- PLATFORM — optional platform identifier (project-specific)
+
+Security note: Do not commit `.env` containing secrets to source control. Use secret management for production.
 # ByteBucket
