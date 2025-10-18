@@ -39,6 +39,10 @@ func main() {
 	dbQueries := database.New(db)
 	apiCfg.db = dbQueries
 	apiCfg.port = os.Getenv("PORT")
+	// default to 8080 if no PORT provided
+	if apiCfg.port == "" {
+		apiCfg.port = "8080"
+	}
 	apiCfg.tokenSecret = os.Getenv("TOKEN_SECRET")
 	apiCfg.platform = os.Getenv("PLATFORM")
 	apiCfg.s3Bucket = os.Getenv("S3_BUCKET")
@@ -66,6 +70,7 @@ func main() {
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 	mux.HandleFunc("POST /api/login", apiCfg.loginUserHandler)
 	mux.Handle("POST /api/files", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.uploadFileHandler)))
+	mux.Handle("GET /api/files", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.listFilesHandler)))
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshTokenHandler)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetHandler)
 	mux.Handle("GET /api/files/", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.downloadFileHandler)))
