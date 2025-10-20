@@ -1,145 +1,111 @@
 # ByteBucket
 
-ByteBucket is a small file-storage and authentication backend written in Go. It demonstrates common backend features you'd expect in a modern web service: secure password hashing, JWT-based authentication with refresh tokens, DB-backed models using sqlc, and presigned S3 uploads for direct-to-cloud file uploads.
+ByteBucket is a small file-storage and authentication backend written in Go. It demonstrates common backend features you'd expect in a modern web service: secure password hashing, JWT-based authentication with refresh tokens, DB-backed models using sqlc, and S3-backed file storage.
 
-This repository is a work-in-progress created as a student project. It is suitable as a portfolio example to show practical skills wiring authentication, storage, and cloud integrations together. Several features are intentionally incomplete and marked under "Known limitations" below.
+This README reflects the current implementation: uploads go through the server (multipart) instead of presigned URLs.
+
+## What changed
+- **Uploads**: the server now accepts multipart/form-data POST to `/api/files`. The server saves the uploaded file to a temporary file (OS temp dir), uploads it to S3 via the server's AWS credentials (PutObject), records metadata in the database, and returns the object key. No presigned PUT URLs are returned.
+- **Frontend**: the demo frontend now sends files as `FormData` to `/api/files` (with `Authorization: Bearer <JWT>`) and handles downloads by fetching or opening the presigned GET URL the server generates for downloads.
 
 ## Highlights / Functionality
 
-- User registration and login
+- **User registration and login**
   - Passwords hashed with bcrypt (`internal/auth/hash.go`).
-  - Login returns a JWT access token and a refresh token stored in the DB.
-- JWT-based authentication middleware
-  - Access tokens created with `github.com/golang-jwt/jwt/v5` (`internal/auth/jwt.go`) and validated in `cmd/jwt_middleware.go`.
-- Refresh tokens
-  - Server-generated refresh tokens stored in the DB (`internal/auth/refresh_token.go` + `sql/refresh_tokens.sql`).
-- Presigned S3 uploads
-  - Server generates presigned PUT URLs so clients upload directly to S3 without routing bytes through the app (`cmd/uploadFileHandler.go`).
-- Database access with sqlc
-  - SQL schemas in `sql/schema/` and generated accessors in `internal/database`.
-- Basic API utilities
-  - JSON helpers and consistent response functions in `cmd/json.go`.
-- CI and tests
-  - GitHub Actions workflow checks formatting, runs `go vet`, and runs `go test` with the race detector and coverage (see `.github/workflows/ci.yml`).
+- **JWT-based authentication middleware**
+  - Access tokens created and validated with `github.com/golang-jwt/jwt/v5` (`internal/auth/jwt.go`).
+- **Refresh tokens**
+  - Server-generated refresh tokens stored in the DB.
+- **Server-side S3 uploads**
+  - Client uploads files to the server via multipart POST `/api/files` (protected). Server saves to a temp file and calls S3 PutObject. The DB is updated with object metadata.
+- **List files**
+  - GET `/api/files` returns a JSON array of file metadata for the authenticated user.
+- **Download**
+  - GET `/api/files/{id}` returns a presigned GET URL; the frontend fetches as a blob and falls back to opening the URL in a new tab if browser CORS prevents reading the response.
 
 ## Technologies Used
 
 - Language: Go 1.24
-- Authentication: bcrypt (`golang.org/x/crypto/bcrypt`), JWT (`github.com/golang-jwt/jwt/v5`)
-- Database: PostgreSQL (sql files under `sql/schema`), accessed via sqlc-generated code (`internal/database`)
-- Cloud Storage: Amazon S3 presigned uploads (`github.com/aws/aws-sdk-go-v2`)
+- Authentication: bcrypt, JWT
+- Database: PostgreSQL with sqlc-generated code
+- Cloud Storage: Amazon S3 (`github.com/aws/aws-sdk-go-v2`)
 - CI: GitHub Actions
-- Utilities: `github.com/google/uuid`, `github.com/joho/godotenv` (for local env loading)
-
-## Architecture Overview
-
-1. Client registers a user (POST /users). Password is hashed and user stored in the DB.
-2. Client logs in (POST /login). On success the server returns a short-lived JWT and a refresh token (longer-lived).
-3. Client uses JWT to access protected endpoints. Middleware extracts the JWT, validates it, and sets the user ID in request context.
-4. For file uploads, the client requests a presigned upload URL (POST /upload). Server returns a presigned PUT URL; the client uploads directly to S3 and the server records metadata in the DB.
+- Utilities: `github.com/google/uuid`, `github.com/joho/godotenv`
 
 ## How to run (development)
 
 1. Install Go 1.24 and PostgreSQL.
-2. Copy `.env.example` to `.env` (if present) and set DB and AWS credentials/environment variables (e.g., `DATABASE_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`, `TOKEN_SECRET`).
-3. Run DB migrations in `sql/schema/` to create users/refresh_tokens/files tables.
-4. Build and run:
-
-```powershell
-go build ./cmd
-.\cmd\your-binary-name.exe
+2. Create a `.env` file with:
+```
+DATABASE_URL=postgres://user:pass@localhost:5432/dbname?sslmode=disable
+TOKEN_SECRET=your_jwt_secret
+AWS_REGION=eu-central-1
+S3_BUCKET=your-bucket-name
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+PORT=8080
 ```
 
-Or run directly with `go run` from the `cmd` folder if you prefer.
+3. Run database migrations in `sql/schema/` to create the tables.
+4. Build and run:
+```bash
+go build ./cmd
+./cmd
+```
 
-API endpoints and handlers are implemented in `cmd/` (for example: `createUserHandler.go`, `loginUserHandler.go`, `uploadFileHandler.go`).
+The server serves a demo frontend at `/` which you can use to register, login, and upload files.
+
+## API Endpoints
+
+- **POST /api/users** — Register a user
+  - Body: `{"username":"alice","email":"alice@example.com","password":"secret"}`
+  - Response: 201 with user object
+
+- **POST /api/login** — Login
+  - Body: `{"email":"alice@example.com","password":"secret"}`
+  - Response: 200 with `jwt_token` and `refresh_token`
+
+- **POST /api/files** — Upload file (protected)
+  - Body: multipart/form-data with `file` field
+  - Response: 200 with file metadata and object key
+
+- **GET /api/files** — List files (protected)
+  - Response: 200 with array of file metadata
+
+- **GET /api/files/{id}** — Get download URL (protected)
+  - Response: 200 with presigned GET URL (owner only)
+
+- **POST /api/refresh** — Refresh token
+  - Body: `{"refresh_token":"..."}`
+  - Response: 200 with new JWT access token
+
+## Notes & Security
+
+- The server must have `s3:PutObject` and `s3:GetObject` permissions on the configured bucket.
+- Temporary files are removed after upload but are stored briefly in the OS temp dir; consider scanning/size limiting in production.
+- Use HTTPS and secure cookie patterns if you move tokens into cookies for browser flows.
+- Do not commit `.env` containing secrets to source control.
 
 ## Tests & CI
 
-- Run unit tests locally:
-
-```powershell
+Run unit tests locally:
+```bash
 go test ./... -v
 ```
 
-- CI: GitHub Actions runs formatting checks, `go vet`, and `go test` with the race detector and coverage. Coverage is uploaded as an artifact.
+GitHub Actions runs formatting checks, `go vet`, and tests with the race detector and coverage.
 
-## Known limitations (Work in progress)
+## Known Limitations
 
-- Downloading files is not implemented. The server currently only supports creating presigned upload URLs and storing metadata.
 - User account deletion is not implemented.
 - File deletion (object removal & DB cleanup) is not implemented.
-- Refresh tokens are stored/created but could be hardened by storing hashed refresh tokens in the DB and supporting rotation.
-- Input validation needs improvement (email/password validation with clear per-field errors).
-- Error responses sometimes include internal error strings — these must be sanitized before a public release.
-- More unit and integration tests are desirable, including handler tests and an integration test against a test DB.
+- Refresh tokens could be hardened by storing hashed tokens and supporting rotation.
+- Input validation needs improvement with per-field error messages.
+- Error responses should sanitize internal error strings before public release.
 
-## Security notes 
+## Next Steps
 
-- Do not return raw error messages in responses — use machine-readable error codes and safe human messages.
-- Use short lifetimes for access tokens and rotate refresh tokens on use.
-- Consider storing only hashed refresh tokens server-side to reduce damage from a DB leak.
-- Add rate-limiting or temporary lockout for repeated failed login attempts.
-- Ensure S3 bucket CORS is correctly configured for direct browser uploads, and use HTTP-only Secure cookies for refresh tokens when serving browsers.
-
-## Next steps / Ideas to showcase
-
-- Implement file downloads with presigned GETs and a demo HTML page that performs the full flow.
-- Add hashed refresh tokens + rotation and tests for token flows.
-- Add a small React/vanilla JS demo that demonstrates signup -> login -> presigned upload -> display uploaded file list.
-- Add integration tests that run migrations on a test Postgres container and run key end-to-end flows.
-
-
-## API usage
-
-Below are the endpoints implemented in this project and how to call them. All protected endpoints require the `Authorization: Bearer <JWT>` header returned by the login endpoint.
-
-1) Register a user
-  - POST /api/users
-  - Body (JSON): { "username": "alice", "email": "alice@example.com", "password": "secret" }
-  - Response: 201 Created with user object
-
-2) Login
-  - POST /api/login
-  - Body (JSON): { "email": "alice@example.com", "password": "secret" }
-  - Response: 200 OK with JSON containing `jwt_token` and `refresh_token`.
-
-3) Request presigned upload URL
-  - POST /api/files (protected)
-  - Body (JSON): { "file_name": "photo.jpg", "mime_type": "image/jpeg" }
-  - Response: 200 OK with JSON containing `upload_url` (presigned PUT URL), `key` and `mime_type`.
-
-4) List files for the authenticated user
-  - GET /api/files (protected)
-  - Response: 200 OK with array of files: [{ "id": "<uuid>", "file_name": "...", "mime_type": "...", "key": "...", "created_at": "..." }, ...]
-
-5) Get a presigned download URL for a file
-  - GET /api/files/{id} (protected)
-  - Response: 200 OK with JSON { "url": "<presigned-get-url>" } (only the file owner can get the URL)
-
-6) Refresh token
-  - POST /api/refresh
-  - Body: (implementation-specific) — returns a new JWT when provided a valid refresh token (see handlers)
-
-
-## .env variables
-
-Create a `.env` in the project root (or export env vars) with at least the following values for local development:
-
-- DATABASE_URL — Postgres connection string, e.g. `postgres://user:pass@localhost:5432/dbname?sslmode=disable`
-- TOKEN_SECRET — secret used to sign JWTs
-- AWS_REGION — AWS region for S3 (e.g. `us-east-1`)
-- S3_BUCKET — S3 bucket name used for presigned URLs
-- AWS_ACCESS_KEY_ID — AWS access key id
-- AWS_SECRET_ACCESS_KEY — AWS secret access key
-- PORT — optional, defaults to 8080 if not set
-
-Optional / useful env vars:
-- PLATFORM — optional platform identifier (project-specific)
-
-Security note: Do not commit `.env` containing secrets to source control. Use secret management for production.
-
-## Contact / Attribution
-
-This project was created by the author as a student portfolio project. If you want help improving any of the TODO items above, I can implement them and add tests/CI changes.
-# ByteBucket
+- Add hashed refresh tokens + rotation with tests
+- Implement more comprehensive unit and integration tests
+- Add rate-limiting for login attempts
+- Improve input validation with detailed error messages
