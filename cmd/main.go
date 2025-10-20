@@ -4,15 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/max-durnea/ByteBucket/internal/database"
-	"net/http"
-	"os"
-	"time"
 )
 
 var apiCfg = apiConfig{}
@@ -67,6 +68,7 @@ func main() {
 	server.Addr = fmt.Sprintf("localhost:%v", apiCfg.port)
 	fmt.Printf("Server running on port %v\n", apiCfg.port)
 
+	// API endpoints
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 	mux.HandleFunc("POST /api/login", apiCfg.loginUserHandler)
 	mux.Handle("POST /api/files", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.uploadFileHandler)))
@@ -74,6 +76,21 @@ func main() {
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshTokenHandler)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetHandler)
 	mux.Handle("GET /api/files/", apiCfg.JwtMiddleware(http.HandlerFunc(apiCfg.downloadFileHandler)))
+
+	// Serve frontend static files from /assets/frontend and other assets
+	fs := http.FileServer(http.Dir("assets/frontend"))
+	// index at root
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Serve index.html for root path, otherwise fall back to file server
+		if r.URL.Path == "/" || r.URL.Path == "" {
+			http.ServeFile(w, r, "assets/frontend/index.html")
+			return
+		}
+		fs.ServeHTTP(w, r)
+	})
+	// Expose assets (css/js) under /assets/
+	assets := http.FileServer(http.Dir("assets"))
+	mux.Handle("/assets/", http.StripPrefix("/assets/", assets))
 	apiCfg.StartRefreshTokenCleanup(15 * time.Minute)
 	server.ListenAndServe()
 }

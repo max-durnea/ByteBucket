@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ByteBucket — Demo UI</title>
+  <link rel="stylesheet" href="/assets/frontend/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>ByteBucket — Demo UI</h1>
+
+    <section id="auth">
+      <h2>Auth</h2>
+      <div class="row">
+        <form id="registerForm">
+          <h3>Register</h3>
+          <input name="username" placeholder="username" />
+          <input name="email" placeholder="email" />
+          <input name="password" type="password" placeholder="password" />
+          <button type="submit">Create User</button>
+        </form>
+
+        <form id="loginForm">
+          <h3>Login</h3>
+          <input name="email" placeholder="email" />
+          <input name="password" type="password" placeholder="password" />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+
+      <div class="row">
+        <button id="btnRefresh">Refresh Access Token</button>
+        <button id="btnClearTokens">Clear Stored Tokens</button>
+      </div>
+      <pre id="authOutput" class="output"></pre>
+    </section>
+
+    <section id="files">
+      <h2>Files</h2>
+      <form id="uploadForm">
+        <input name="file" type="file" />
+        <button type="submit">Upload (via presigned URL)</button>
+      </form>
+
+      <div class="row">
+        <button id="btnListFiles">List Files</button>
+      </div>
+
+      <ul id="filesList" class="list"></ul>
+      <pre id="filesOutput" class="output"></pre>
+    </section>
+
+    <section id="admin">
+      <h2>Admin</h2>
+      <button id="btnReset">Reset DB (dev only)</button>
+      <pre id="adminOutput" class="output"></pre>
+    </section>
+  </div>
+  <script src="/assets/frontend/app.js"></script>
+</body>
+</html>
